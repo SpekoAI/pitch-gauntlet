@@ -1,0 +1,146 @@
+[
+  {
+    "personaId": "skeptic",
+    "lineId": "skeptic-placeholder-01",
+    "text": "PLACEHOLDER: Get to the point. Your opening is dragging.",
+    "tags": ["placeholder", "pace", "opening"]
+  },
+  {
+    "personaId": "skeptic",
+    "lineId": "skeptic-placeholder-02",
+    "text": "PLACEHOLDER: You buried the point under too many words.",
+    "tags": ["placeholder", "clarity", "brevity"]
+  },
+  {
+    "personaId": "skeptic",
+    "lineId": "skeptic-placeholder-03",
+    "text": "PLACEHOLDER: Stop circling. Say the sentence you actually mean.",
+    "tags": ["placeholder", "clarity", "directness"]
+  },
+  {
+    "personaId": "skeptic",
+    "lineId": "skeptic-placeholder-04",
+    "text": "PLACEHOLDER: That was a slogan. Give me a concrete statement.",
+    "tags": ["placeholder", "specificity", "buzzword"]
+  },
+  {
+    "personaId": "skeptic",
+    "lineId": "skeptic-placeholder-05",
+    "text": "PLACEHOLDER: Your filler words are doing all the talking.",
+    "tags": ["placeholder", "filler", "delivery"]
+  },
+  {
+    "personaId": "skeptic",
+    "lineId": "skeptic-placeholder-06",
+    "text": "PLACEHOLDER: I need structure, not another wandering sentence.",
+    "tags": ["placeholder", "structure", "clarity"]
+  },
+  {
+    "personaId": "skeptic",
+    "lineId": "skeptic-placeholder-07",
+    "text": "PLACEHOLDER: You paused too long. Recover and keep moving.",
+    "tags": ["placeholder", "silence", "recovery"]
+  },
+  {
+    "personaId": "skeptic",
+    "lineId": "skeptic-placeholder-08",
+    "text": "PLACEHOLDER: Thirty seconds in, and this still lacks a headline.",
+    "tags": ["placeholder", "monologue", "focus"]
+  },
+  {
+    "personaId": "spreadsheet",
+    "lineId": "spreadsheet-placeholder-01",
+    "text": "PLACEHOLDER: Give me one number and explain why it matters.",
+    "tags": ["placeholder", "numbers", "specificity"]
+  },
+  {
+    "personaId": "spreadsheet",
+    "lineId": "spreadsheet-placeholder-02",
+    "text": "PLACEHOLDER: Your pacing is fast, but your structure is missing.",
+    "tags": ["placeholder", "pace", "structure"]
+  },
+  {
+    "personaId": "spreadsheet",
+    "lineId": "spreadsheet-placeholder-03",
+    "text": "PLACEHOLDER: Label the claim, then support it. Be precise.",
+    "tags": ["placeholder", "structure", "precision"]
+  },
+  {
+    "personaId": "spreadsheet",
+    "lineId": "spreadsheet-placeholder-04",
+    "text": "PLACEHOLDER: Too many qualifiers. Commit to a clear sentence.",
+    "tags": ["placeholder", "clarity", "directness"]
+  },
+  {
+    "personaId": "spreadsheet",
+    "lineId": "spreadsheet-placeholder-05",
+    "text": "PLACEHOLDER: That answer needs a beginning, middle, and end.",
+    "tags": ["placeholder", "structure", "delivery"]
+  },
+  {
+    "personaId": "spreadsheet",
+    "lineId": "spreadsheet-placeholder-06",
+    "text": "PLACEHOLDER: Replace the buzzwords with one measurable fact.",
+    "tags": ["placeholder", "buzzword", "numbers"]
+  },
+  {
+    "personaId": "spreadsheet",
+    "lineId": "spreadsheet-placeholder-07",
+    "text": "PLACEHOLDER: Your explanation is longer than the point deserves.",
+    "tags": ["placeholder", "brevity", "focus"]
+  },
+  {
+    "personaId": "spreadsheet",
+    "lineId": "spreadsheet-placeholder-08",
+    "text": "PLACEHOLDER: Reset. State the headline, evidence, and conclusion.",
+    "tags": ["placeholder", "recovery", "structure"]
+  },
+  {
+    "personaId": "vibes",
+    "lineId": "vibes-placeholder-01",
+    "text": "PLACEHOLDER: Breathe. You are racing past your own point.",
+    "tags": ["placeholder", "pace", "delivery"]
+  },
+  {
+    "personaId": "vibes",
+    "lineId": "vibes-placeholder-02",
+    "text": "PLACEHOLDER: That sounded rehearsed. Talk like a person.",
+    "tags": ["placeholder", "authenticity", "delivery"]
+  },
+  {
+    "personaId": "vibes",
+    "lineId": "vibes-placeholder-03",
+    "text": "PLACEHOLDER: The energy dropped. Land the sentence with confidence.",
+    "tags": ["placeholder", "energy", "confidence"]
+  },
+  {
+    "personaId": "vibes",
+    "lineId": "vibes-placeholder-04",
+    "text": "PLACEHOLDER: Lose the jargon. I want a sentence I remember.",
+    "tags": ["placeholder", "buzzword", "clarity"]
+  },
+  {
+    "personaId": "vibes",
+    "lineId": "vibes-placeholder-05",
+    "text": "PLACEHOLDER: You have momentum. Stop adding filler and use it.",
+    "tags": ["placeholder", "filler", "momentum"]
+  },
+  {
+    "personaId": "vibes",
+    "lineId": "vibes-placeholder-06",
+    "text": "PLACEHOLDER: That pause felt uncertain. Come back with conviction.",
+    "tags": ["placeholder", "silence", "confidence"]
+  },
+  {
+    "personaId": "vibes",
+    "lineId": "vibes-placeholder-07",
+    "text": "PLACEHOLDER: Your voice is flat. Give the key line some weight.",
+    "tags": ["placeholder", "energy", "emphasis"]
+  },
+  {
+    "personaId": "vibes",
+    "lineId": "vibes-placeholder-08",
+    "text": "PLACEHOLDER: Wrap this thought. The room is ready for the next one.",
+    "tags": ["placeholder", "monologue", "pace"]
+  }
+]
