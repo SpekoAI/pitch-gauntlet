@@ -1,0 +1,56 @@
+{
+  "_note": "Scripted seed replays for the spectator gallery. Interruption text is resolved from prebake/interjections-final.json by lineId; pitch captions are authored here. No fake human audio - founder lines render as captions only.",
+  "replays": [
+    {
+      "id": "speko",
+      "title": "The Speko pitch",
+      "subtitle": "replay - captions",
+      "durationMs": 30000,
+      "timeline": [
+        { "tMs": 300, "type": "interruption", "personaId": "spreadsheet", "lineId": "sp-open-01" },
+        { "tMs": 2600, "type": "pitch_caption", "text": "We are Speko. Our voice agents answer fast enough to interrupt you. Rude, but useful." },
+        { "tMs": 7200, "type": "pitch_caption", "text": "Our voices are indistinguishable from humans, and our platform, um, the platform..." },
+        { "tMs": 10400, "type": "interruption", "personaId": "vibes", "lineId": "vb-08" },
+        { "tMs": 13200, "type": "pitch_caption", "text": "Fair. The numbers are good. The panel interrupting me is running on them." },
+        { "tMs": 17400, "type": "interruption", "personaId": "spreadsheet", "lineId": "sp-02" },
+        { "tMs": 20200, "type": "pitch_caption", "text": "Everything you are hearing is our own api. The interruptions too. Especially the interruptions." },
+        { "tMs": 24600, "type": "interruption", "personaId": "vibes", "lineId": "vb-12" },
+        { "tMs": 27200, "type": "pitch_caption", "text": "Developers do. Per minute. Happy to show you the dashboard." }
+      ]
+    },
+    {
+      "id": "uber-for-dogs",
+      "title": "Uber for dogs",
+      "subtitle": "replay - captions",
+      "durationMs": 32000,
+      "timeline": [
+        { "tMs": 300, "type": "interruption", "personaId": "skeptic", "lineId": "sk-open-01" },
+        { "tMs": 2800, "type": "pitch_caption", "text": "It is Uber, but for dogs. Dogs need to go places." },
+        { "tMs": 6800, "type": "interruption", "personaId": "skeptic", "lineId": "sk-04" },
+        { "tMs": 9600, "type": "pitch_caption", "text": "Every dog owner. The TAM is every dog on earth." },
+        { "tMs": 13600, "type": "interruption", "personaId": "spreadsheet", "lineId": "sp-08" },
+        { "tMs": 16800, "type": "pitch_caption", "text": "Okay so, like, our beachhead is, um, golden retrievers specifically." },
+        { "tMs": 21000, "type": "interruption", "personaId": "vibes", "lineId": "vb-03" },
+        { "tMs": 24200, "type": "pitch_caption", "text": "The dogs cannot drive themselves. That is the moat." },
+        { "tMs": 28200, "type": "interruption", "personaId": "skeptic", "lineId": "sk-07" }
+      ]
+    },
+    {
+      "id": "ai-for-ai",
+      "title": "AI-powered AI for AI",
+      "subtitle": "replay - captions",
+      "durationMs": 30000,
+      "timeline": [
+        { "tMs": 300, "type": "interruption", "personaId": "vibes", "lineId": "vb-open-01" },
+        { "tMs": 2800, "type": "pitch_caption", "text": "We are building an AI-powered platform that uses AI to make your AI more AI." },
+        { "tMs": 7000, "type": "interruption", "personaId": "skeptic", "lineId": "sk-01" },
+        { "tMs": 9800, "type": "pitch_caption", "text": "It is a revolutionary paradigm. A game-changer for synergy at scale." },
+        { "tMs": 14200, "type": "interruption", "personaId": "spreadsheet", "lineId": "sp-13" },
+        { "tMs": 17200, "type": "pitch_caption", "text": "We will monetize the, um, the community. With tokens. AI tokens." },
+        { "tMs": 21600, "type": "interruption", "personaId": "vibes", "lineId": "vb-09" },
+        { "tMs": 24600, "type": "pitch_caption", "text": "..." },
+        { "tMs": 28000, "type": "interruption", "personaId": "skeptic", "lineId": "sk-silence-01" }
+      ]
+    }
+  ]
+}
