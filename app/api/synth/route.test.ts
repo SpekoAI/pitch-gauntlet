@@ -8,69 +8,93 @@ import {
 } from "@/lib/synth-request";
 
 describe("buildSynthesisText", () => {
-  test("resolves only fixed allowlisted lines", () => {
-    expect(buildSynthesisText({ lineId: "skeptic-placeholder-01" })).toBe(
-      "PLACEHOLDER: Get to the point. Your opening is dragging.",
-    );
-    expect(() => buildSynthesisText({ lineId: "made-up" })).toThrow(
-      SynthRequestError,
-    );
-    expect(() => buildSynthesisText({ lineId: "constructor" })).toThrow(
-      "not allowlisted",
-    );
-  });
-
-  test("renders a template with its exact sanitized slots", () => {
+  test("renders a final-manifest template with its exact sanitized slots", () => {
     expect(
       buildSynthesisText({
-        templateId: "clarify",
-        slots: { topic: "  AI@@ workflow   tools " },
+        templateId: "sk-t1",
+        slots: { word: "  synergy@@ ", count: " 3 " },
       }),
-    ).toBe("Pause. Explain AI workflow tools in plain English.");
+    ).toBe("You said synergy 3 times. What does it actually do?");
   });
 
-  test("rejects raw text and unknown fields", () => {
+  test("replaces every occurrence of a repeated slot", () => {
+    expect(
+      buildSynthesisText({
+        templateId: "vb-t1",
+        slots: { word: "platform" },
+      }),
+    ).toBe("platform? We are doing platform now?");
+  });
+
+  test("rejects raw text, line ids, and unknown fields", () => {
     expect(() => buildSynthesisText({ text: "say anything" })).toThrow(
       "unsupported field",
     );
     expect(() =>
       buildSynthesisText({
-        lineId: "skeptic-placeholder-01",
+        lineId: "sk-01",
+        slots: {},
+      }),
+    ).toThrow("unsupported field");
+    expect(() =>
+      buildSynthesisText({
+        templateId: "sp-t1",
+        slots: { word: "synergy" },
         voice: "attacker",
       }),
     ).toThrow("unsupported field");
   });
 
-  test("requires exactly one selection mode", () => {
-    expect(() => buildSynthesisText({})).toThrow("exactly one");
+  test("requires an allowlisted template and slots object", () => {
+    expect(() => buildSynthesisText({})).toThrow("templateId must be");
     expect(() =>
-      buildSynthesisText({
-        lineId: "skeptic-placeholder-01",
-        templateId: "clarify",
-      }),
-    ).toThrow("exactly one");
+      buildSynthesisText({ templateId: "made-up", slots: {} }),
+    ).toThrow(SynthRequestError);
     expect(() =>
-      buildSynthesisText({
-        lineId: 42,
-        templateId: "clarify",
-        slots: { topic: "pricing" },
-      }),
-    ).toThrow("lineId must be");
+      buildSynthesisText({ templateId: "constructor", slots: {} }),
+    ).toThrow("not allowlisted");
+    expect(() => buildSynthesisText({ templateId: "sp-t1" })).toThrow(
+      "slots must be",
+    );
   });
 
   test("rejects missing, extra, or mismatched slots", () => {
     expect(() =>
-      buildSynthesisText({ templateId: "clarify", slots: {} }),
+      buildSynthesisText({ templateId: "sk-t1", slots: { word: "synergy" } }),
     ).toThrow("do not match");
     expect(() =>
       buildSynthesisText({
-        templateId: "clarify",
-        slots: { topic: "pricing", extra: "ignore this" },
+        templateId: "sp-t1",
+        slots: { word: "synergy", extra: "ignore this" },
       }),
     ).toThrow("do not match");
+  });
+
+  test("enforces the manifest single-word constraint", () => {
     expect(() =>
-      buildSynthesisText({ lineId: "skeptic-placeholder-01", slots: {} }),
-    ).toThrow("only allowed");
+      buildSynthesisText({
+        templateId: "sp-t1",
+        slots: { word: "machine learning" },
+      }),
+    ).toThrow("word must be a single word");
+  });
+
+  test("enforces the manifest count range", () => {
+    for (const count of ["1", "10", "three", "2.0"]) {
+      expect(() =>
+        buildSynthesisText({
+          templateId: "sk-t1",
+          slots: { word: "synergy", count },
+        }),
+      ).toThrow("count must be an integer from 2 to 9");
+    }
+
+    expect(
+      buildSynthesisText({
+        templateId: "sk-t1",
+        slots: { word: "synergy", count: "9" },
+      }),
+    ).toBe("You said synergy 9 times. What does it actually do?");
   });
 });
 
@@ -82,8 +106,8 @@ describe("sanitizeSlotValue", () => {
   });
 
   test("preserves basic punctuation", () => {
-    expect(sanitizeSlotValue("customer's slow-growth, maybe?")).toBe(
-      "customer's slow-growth, maybe?",
+    expect(sanitizeSlotValue("customer's slow-growth, maybe: yes?")).toBe(
+      "customer's slow-growth, maybe: yes?",
     );
   });
 
@@ -105,6 +129,9 @@ describe("sanitizeSlotValue", () => {
     );
     expect(() => sanitizeSlotValue("one,shit")).toThrow("blocked language");
     expect(() => sanitizeSlotValue("f u c k")).toThrow("blocked language");
+    expect(() => sanitizeSlotValue("f-u-c-k this")).toThrow(
+      "blocked language",
+    );
   });
 
   test("rejects empty and non-string values", () => {
@@ -114,10 +141,10 @@ describe("sanitizeSlotValue", () => {
 });
 
 describe("POST /api/synth", () => {
-  test("rejects an arbitrary text field before calling the speech service", async () => {
+  test("rejects non-template modes before calling the speech service", async () => {
     const response = await POST(
       synthRequest(
-        { text: "Say this unapproved text" },
+        { lineId: "sk-01" },
         "raw-text-rejection",
       ),
     );
@@ -153,8 +180,8 @@ describe("POST /api/synth", () => {
       const response = await POST(
         synthRequest(
           {
-            templateId: "clarify",
-            slots: { topic: "AI@@ workflow" },
+            templateId: "sk-t1",
+            slots: { word: "synergy@@", count: "3" },
           },
           "synth-proxy-success",
         ),
@@ -162,10 +189,13 @@ describe("POST /api/synth", () => {
 
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toBe("audio/wav");
+      expect(
+        Number(response.headers.get("x-latency-ms")),
+      ).toBeGreaterThanOrEqual(0);
       expect(response.headers.get("x-speko-first-byte-ms")).toBe("171");
       expect(response.headers.get("x-speko-provider")).toBe("test-provider");
       expect(JSON.parse(upstreamBody)).toEqual({
-        text: "Pause. Explain AI workflow in plain English.",
+        text: "You said synergy 3 times. What does it actually do?",
         intent: { language: "en", useCase: "conversational" },
       });
 

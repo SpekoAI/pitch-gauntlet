@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { POST } from "./route";
+import { InMemoryTokenBucket } from "@/lib/ratelimit";
+import { STT_RATE_LIMIT_OPTIONS } from "@/lib/stt-rate-limit";
 import { extractTranscription } from "@/lib/transcription";
+import { POST } from "./route";
 
 describe("extractTranscription", () => {
   test("prefers the done transcript and confidence", () => {
@@ -36,6 +38,29 @@ describe("extractTranscription", () => {
 });
 
 describe("POST /api/stt-chunk", () => {
+  test("allows a 90 second pitch at three second chunk cadence", () => {
+    const limiter = new InMemoryTokenBucket(STT_RATE_LIMIT_OPTIONS);
+
+    for (let chunk = 0; chunk < 30; chunk += 1) {
+      expect(limiter.consume("pitch", 1, chunk * 3_000).allowed).toBe(true);
+    }
+  });
+
+  test("permits a bounded burst and refills at 20 chunks per minute", () => {
+    const limiter = new InMemoryTokenBucket(STT_RATE_LIMIT_OPTIONS);
+
+    for (let chunk = 0; chunk < STT_RATE_LIMIT_OPTIONS.capacity; chunk += 1) {
+      expect(limiter.consume("burst", 1, 0).allowed).toBe(true);
+    }
+
+    expect(limiter.consume("burst", 1, 0)).toEqual({
+      allowed: false,
+      remaining: 0,
+      retryAfterMs: 3_000,
+    });
+    expect(limiter.consume("burst", 1, 3_000).allowed).toBe(true);
+  });
+
   test("requires a declared duration no greater than 15 seconds", async () => {
     const missing = await POST(
       audioRequest({ "x-forwarded-for": "duration-missing" }),
@@ -56,11 +81,15 @@ describe("POST /api/stt-chunk", () => {
     const originalKey = process.env.SPEKO_API_KEY;
     const originalBase = process.env.SPEKO_API_BASE;
     let upstreamHeaders = new Headers();
+    let upstreamUrl = "";
+    let upstreamAudio = new Uint8Array();
 
     process.env.SPEKO_API_KEY = "test-key";
     process.env.SPEKO_API_BASE = "https://speko.test";
-    globalThis.fetch = (async (_input, init) => {
+    globalThis.fetch = (async (input, init) => {
+      upstreamUrl = String(input);
       upstreamHeaders = new Headers(init?.headers);
+      upstreamAudio = new Uint8Array(await new Response(init?.body).arrayBuffer());
       return new Response(
         [
           'event: transcript\ndata: {"text":"partial","confidence":0.5}',
@@ -89,6 +118,8 @@ describe("POST /api/stt-chunk", () => {
       expect(upstreamHeaders.get("x-speko-intent")).toBe(
         '{"language":"en"}',
       );
+      expect(upstreamUrl).toBe("https://speko.test/v1/transcribe");
+      expect(upstreamAudio).toEqual(Uint8Array.from([1, 2]));
     } finally {
       globalThis.fetch = originalFetch;
       restoreEnv("SPEKO_API_KEY", originalKey);

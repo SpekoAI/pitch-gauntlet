@@ -77,7 +77,7 @@ export async function POST(request: Request): Promise<Response> {
           },
           {
             role: "user",
-            content: `Transcript data: ${JSON.stringify(input.transcript)}`,
+            content: `Run stats: ${JSON.stringify(input.stats)}`,
           },
         ],
         intent: { language: "en", useCase: "conversational" },

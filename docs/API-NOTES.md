@@ -150,26 +150,22 @@ may accumulate `delta` text as a fallback.
 
 ## Repository run measurements
 
-The placeholder prebake run generated all 24 files with three concurrent
-workers. Every output was verified as RIFF/WAVE, mono, signed 16-bit PCM at
-24 kHz.
+The final-library prebake run generated all 48 manifest lines with three
+concurrent workers. The batch included the silence and opener tags and ignored
+the three dynamic slot templates. All 48 outputs were verified as RIFF/WAVE,
+mono, signed 16-bit PCM at 24 kHz; together they contain 5,782,548 bytes.
 
-Synthesis measurements across the 24 generated lines:
+Synthesis measurements across the 48 generated lines:
 
-- Service first-byte header: 482.6 ms average, 277 ms median
-- Service first-byte range: 124 to 1909 ms
-- End-to-end synthesis and file-write time: 2443.9 ms average, 2263 ms median
-- End-to-end range: 1335 to 4150 ms
+- Service first-byte header: 277.1 ms average
+- End-to-end synthesis and file-write time: 1433.6 ms average
 
-The run selected these placeholder voice ids from `/v1/voices`:
+The run retained these heuristic voice ids from `/v1/voices` pending an ear
+test:
 
 - skeptic: Onyx, `openai:onyx`
 - spreadsheet: Nova, `openai:nova`
 - vibes: Echo, `openai:echo`
-
-The wider tail came from provider failover. A separate short `onyx` probe
-reported 2181 ms to first byte, seven failovers, and ultimately used MiniMax
-`speech-2.6-turbo`.
 
 For transcription verification, one generated 3.8545 second WAV was sent to
 `/v1/transcribe`:
@@ -187,16 +183,20 @@ For transcription verification, one generated 3.8545 second WAV was sent to
 `x-audio-duration-ms` header between 1 and 15000. The body is limited to 4 MiB.
 The JSON response is `{text, confidence, msElapsed}`.
 
-`POST /api/synth` accepts exactly one of these allowlisted modes:
+The process-local token buckets derive client IPs from platform and proxy
+forwarding headers. Production ingress must strip client-supplied forwarding
+headers and set its own trusted values before requests reach the application.
 
-- `{lineId}` where `lineId` is one of the 24 manifest ids
-- `{templateId, slots}` where the template and exact slot names are allowlisted
+`POST /api/synth` accepts only `{templateId, slots}`, where the template and
+exact slot names come from `prebake/interjections-final.json`.
 
 Slots are sanitized, limited to six alphanumeric word runs, and checked against
 a local profanity list. Unsupported fields, including raw `text` and `voice`,
-are rejected before the speech service is called. The route returns WAV audio
-and passes through Speko first-byte, provider, and model headers.
+as well as fixed `lineId` requests, are rejected before the speech service is
+called. The route returns WAV audio and passes through Speko first-byte,
+provider, and model headers.
 
-`POST /api/roast` accepts a bounded transcript and one of the three persona ids.
-It uses the verified completion SSE wire format, bounds and filters model
-output, and never calls TTS. Dynamic output is not accepted by `/api/synth`.
+`POST /api/roast` accepts one of the three persona ids plus validated delivery
+stats for words per minute, filler count, and buzzword count. It uses the
+verified completion SSE wire format, bounds and filters model output, and never
+calls TTS. Dynamic output is not accepted by `/api/synth`.

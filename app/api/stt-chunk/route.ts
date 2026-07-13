@@ -9,6 +9,7 @@ import {
 import {
   parseJsonServerSentEvents,
 } from "@/lib/speko-sse";
+import { STT_RATE_LIMIT_OPTIONS } from "@/lib/stt-rate-limit";
 import { extractTranscription } from "@/lib/transcription";
 
 export const runtime = "nodejs";
@@ -16,10 +17,7 @@ export const runtime = "nodejs";
 const MAX_AUDIO_BYTES = 4 * 1024 * 1024;
 const MAX_AUDIO_DURATION_MS = 15_000;
 const UPSTREAM_TIMEOUT_MS = 30_000;
-const limiter: RateLimiter = new InMemoryTokenBucket({
-  capacity: 6,
-  refillTokensPerSecond: 0.1,
-});
+const limiter: RateLimiter = new InMemoryTokenBucket(STT_RATE_LIMIT_OPTIONS);
 
 export async function POST(request: Request): Promise<Response> {
   const limit = await limiter.consume(`stt:${getClientIp(request)}`);
@@ -27,7 +25,11 @@ export async function POST(request: Request): Promise<Response> {
     return rateLimitedResponse(limit);
   }
 
-  const contentType = request.headers.get("content-type")?.split(";", 1)[0];
+  const contentType = request.headers
+    .get("content-type")
+    ?.split(";", 1)[0]
+    ?.trim()
+    .toLowerCase();
   if (contentType !== "application/octet-stream") {
     return jsonError(415, "Content-Type must be application/octet-stream");
   }
