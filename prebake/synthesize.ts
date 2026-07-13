@@ -1,11 +1,11 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { parsePcmSampleRate, pcmToWav } from "../lib/pcm-to-wav";
 
 const PERSONA_IDS = ["skeptic", "spreadsheet", "vibes"] as const;
-const EXPECTED_LINES_PER_PERSONA = 8;
+const EXPECTED_LINES_PER_PERSONA = 16;
 const DEFAULT_CONCURRENCY = 3;
 
 type PersonaId = (typeof PERSONA_IDS)[number];
@@ -15,6 +15,24 @@ interface Interjection {
   lineId: string;
   text: string;
   tags: string[];
+}
+
+interface Persona {
+  id: PersonaId;
+  name: string;
+  casting: string;
+  style: string;
+}
+
+export interface InterjectionLibrary {
+  personas: Persona[];
+  lines: Interjection[];
+}
+
+interface SynthesisMetric {
+  bytes: number;
+  firstByteMs: number | null;
+  totalMs: number;
 }
 
 export interface VoiceCandidate {
@@ -52,9 +70,50 @@ function assertAscii(value: string, label: string): void {
   }
 }
 
-function parseInterjections(value: unknown): Interjection[] {
-  if (!Array.isArray(value)) {
-    throw new TypeError("interjections.json must contain an array");
+export function parseInterjectionLibrary(value: unknown): InterjectionLibrary {
+  if (typeof value !== "object" || value === null) {
+    throw new TypeError("interjections-final.json must contain an object");
+  }
+
+  const { personas: rawPersonas, lines: rawLines } = value as Record<
+    string,
+    unknown
+  >;
+  if (!Array.isArray(rawPersonas)) {
+    throw new TypeError("interjections-final.json must contain personas");
+  }
+  if (!Array.isArray(rawLines)) {
+    throw new TypeError("interjections-final.json must contain lines");
+  }
+
+  const seenPersonaIds = new Set<PersonaId>();
+  const personas = rawPersonas.map((entry, index): Persona => {
+    if (typeof entry !== "object" || entry === null) {
+      throw new TypeError(`persona ${index} must be an object`);
+    }
+    const { id, name, casting, style } = entry as Record<string, unknown>;
+    if (!isPersonaId(id) || seenPersonaIds.has(id)) {
+      throw new TypeError(`persona ${index} has an invalid or duplicate id`);
+    }
+    if (
+      typeof name !== "string" ||
+      typeof casting !== "string" ||
+      typeof style !== "string" ||
+      name.length === 0 ||
+      casting.length === 0 ||
+      style.length === 0
+    ) {
+      throw new TypeError(`persona ${id} has invalid casting metadata`);
+    }
+    assertAscii(name, `persona name ${id}`);
+    assertAscii(casting, `persona casting ${id}`);
+    assertAscii(style, `persona style ${id}`);
+    seenPersonaIds.add(id);
+    return { id, name, casting, style };
+  });
+
+  if (personas.length !== PERSONA_IDS.length) {
+    throw new TypeError(`exactly ${PERSONA_IDS.length} personas are required`);
   }
 
   const seenLineIds = new Set<string>();
@@ -62,7 +121,7 @@ function parseInterjections(value: unknown): Interjection[] {
     PERSONA_IDS.map((personaId) => [personaId, 0]),
   );
 
-  const interjections = value.map((entry, index): Interjection => {
+  const lines = rawLines.map((entry, index): Interjection => {
     if (typeof entry !== "object" || entry === null) {
       throw new TypeError(`interjection ${index} must be an object`);
     }
@@ -77,8 +136,8 @@ function parseInterjections(value: unknown): Interjection[] {
     if (seenLineIds.has(lineId)) {
       throw new TypeError(`duplicate lineId: ${lineId}`);
     }
-    if (typeof text !== "string" || !text.startsWith("PLACEHOLDER:")) {
-      throw new TypeError(`interjection ${lineId} must have PLACEHOLDER text`);
+    if (typeof text !== "string" || text.length === 0) {
+      throw new TypeError(`interjection ${lineId} must have text`);
     }
     if (!Array.isArray(tags) || tags.some((tag) => typeof tag !== "string")) {
       throw new TypeError(`interjection ${lineId} has invalid tags`);
@@ -103,7 +162,7 @@ function parseInterjections(value: unknown): Interjection[] {
     }
   }
 
-  return interjections;
+  return { personas, lines };
 }
 
 function parseVoiceCandidates(value: unknown): VoiceCandidate[] {
@@ -146,8 +205,8 @@ function voiceScore(voice: VoiceCandidate, hints: readonly string[]): number {
 }
 
 /**
- * PLACEHOLDER-CASTING: Selects three distinct voices by public voice names.
- * The persona order and tie breaking are deterministic.
+ * Selects three distinct voices by public voice names. This heuristic cast is
+ * intentionally temporary until the final library receives an ear test.
  */
 export function selectPlaceholderVoices(
   input: readonly VoiceCandidate[],
@@ -206,7 +265,7 @@ async function synthesizeLine(
   config: SynthesisConfig,
   interjection: Interjection,
   voice: VoiceCandidate,
-): Promise<void> {
+): Promise<SynthesisMetric> {
   const startedAt = performance.now();
   let voiceWireFormat = "object";
   let response = await requestSynthesis(config, interjection.text, voice);
@@ -249,6 +308,12 @@ async function synthesizeLine(
       `voice=${voice.name} vendor=${voice.vendor} rate=${sampleRate} ` +
       `voiceWire=${voiceWireFormat} firstByteMs=${firstByteMs} totalMs=${totalMs}`,
   );
+  const parsedFirstByteMs = Number(firstByteMs);
+  return {
+    bytes: wav.byteLength,
+    firstByteMs: Number.isFinite(parsedFirstByteMs) ? parsedFirstByteMs : null,
+    totalMs,
+  };
 }
 
 function requestSynthesis(
@@ -288,6 +353,31 @@ async function runWorkers<T>(
   await Promise.all(Array.from({ length: workerCount }, () => runWorker()));
 }
 
+async function removeLegacyPlaceholderWavs(outputRoot: string): Promise<void> {
+  for (const personaId of PERSONA_IDS) {
+    const directory = path.join(outputRoot, personaId);
+    let entries: string[];
+    try {
+      entries = await readdir(directory);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        continue;
+      }
+      throw error;
+    }
+
+    await Promise.all(
+      entries
+        .filter((entry) => entry.includes("-placeholder-") && entry.endsWith(".wav"))
+        .map((entry) => unlink(path.join(directory, entry))),
+    );
+  }
+}
+
+function average(values: readonly number[]): number {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
 export async function main(): Promise<void> {
   const apiKey = process.env.SPEKO_API_KEY;
   const apiBase = process.env.SPEKO_API_BASE?.replace(/\/+$/, "");
@@ -309,26 +399,43 @@ export async function main(): Promise<void> {
       new URL("../public/prebaked", import.meta.url),
     ),
   };
-  const sourcePath = fileURLToPath(new URL("./interjections.json", import.meta.url));
+  const sourcePath = fileURLToPath(
+    new URL("./interjections-final.json", import.meta.url),
+  );
   const source = JSON.parse(await readFile(sourcePath, "utf8")) as unknown;
-  const interjections = parseInterjections(source);
+  const library = parseInterjectionLibrary(source);
   const voices = await fetchVoices(config);
   const selectedVoices = selectPlaceholderVoices(voices);
 
-  for (const personaId of PERSONA_IDS) {
+  for (const persona of library.personas) {
+    const personaId = persona.id;
     const voice = selectedVoices[personaId];
     console.log(
-      `PLACEHOLDER-CASTING ${personaId}: ${voice.name} ` +
-        `(${voice.vendor}:${voice.id})`,
+      `HEURISTIC-CASTING ${personaId}: ${voice.name} ` +
+        `(${voice.vendor}:${voice.id}); target=${persona.casting}`,
     );
   }
 
-  await runWorkers(interjections, config.concurrency, (interjection) =>
-    synthesizeLine(
+  await removeLegacyPlaceholderWavs(config.outputRoot);
+  const metrics: SynthesisMetric[] = [];
+  await runWorkers(library.lines, config.concurrency, async (interjection) => {
+    metrics.push(await synthesizeLine(
       config,
       interjection,
       selectedVoices[interjection.personaId],
-    ),
+    ));
+  });
+
+  const firstByteValues = metrics.flatMap(({ firstByteMs }) =>
+    firstByteMs === null ? [] : [firstByteMs],
+  );
+  const totalBytes = metrics.reduce((sum, metric) => sum + metric.bytes, 0);
+  console.log(
+    `SUMMARY lines=${metrics.length} bytes=${totalBytes} ` +
+      `avgSynthMs=${average(metrics.map(({ totalMs }) => totalMs)).toFixed(1)} ` +
+      `avgFirstByteMs=${
+        firstByteValues.length > 0 ? average(firstByteValues).toFixed(1) : "unknown"
+      }`,
   );
 }
 

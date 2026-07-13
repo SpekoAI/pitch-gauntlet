@@ -1,9 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  parseInterjectionLibrary,
   selectPlaceholderVoices,
   type VoiceCandidate,
 } from "./synthesize";
+
+import finalLibrary from "./interjections-final.json";
 
 function voice(name: string, id: string): VoiceCandidate {
   return { vendor: "test", id, name };
@@ -44,5 +47,24 @@ describe("selectPlaceholderVoices", () => {
         voice("Nova", "nova"),
       ]),
     ).toThrow("three distinct voices");
+  });
+});
+
+describe("parseInterjectionLibrary", () => {
+  test("loads all final lines while leaving slot templates out of the batch", () => {
+    const result = parseInterjectionLibrary(finalLibrary);
+
+    expect(result.personas).toHaveLength(3);
+    expect(result.lines).toHaveLength(48);
+    expect(result.lines.filter(({ tags }) => tags.includes("silence"))).toHaveLength(3);
+    expect(result.lines.filter(({ tags }) => tags.includes("opener"))).toHaveLength(3);
+    expect(result.lines.some(({ lineId }) => lineId.includes("-t1"))).toBe(false);
+  });
+
+  test("requires complete persona casting metadata", () => {
+    const invalid = structuredClone(finalLibrary);
+    invalid.personas[0].casting = "";
+
+    expect(() => parseInterjectionLibrary(invalid)).toThrow("casting metadata");
   });
 });
