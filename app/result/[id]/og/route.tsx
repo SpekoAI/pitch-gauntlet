@@ -97,6 +97,7 @@ export async function GET(
         >
           <div
             style={{
+              display: "flex",
               fontFamily: display,
               fontSize: 26,
               letterSpacing: 10,
@@ -108,6 +109,7 @@ export async function GET(
           </div>
           <div
             style={{
+              display: "flex",
               marginTop: 18,
               fontSize: 30,
               color: PARCHMENT_DIM,
@@ -120,6 +122,7 @@ export async function GET(
           </div>
           <div
             style={{
+              display: "flex",
               fontFamily: display,
               fontSize: 120,
               lineHeight: 1,
