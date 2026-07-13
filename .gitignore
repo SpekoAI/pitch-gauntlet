@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.env*
+!.env.example
+.vercel/
+*.log
+*.tsbuildinfo
+.DS_Store
+data/audio-cache/
