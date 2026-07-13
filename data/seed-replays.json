@@ -9,7 +9,7 @@
       "timeline": [
         { "tMs": 300, "type": "interruption", "personaId": "spreadsheet", "lineId": "sp-open-01" },
         { "tMs": 2600, "type": "pitch_caption", "text": "We are Speko. Our voice agents answer fast enough to interrupt you. Rude, but useful." },
-        { "tMs": 7200, "type": "pitch_caption", "text": "Our voices are indistinguishable from humans, and our platform, um, the platform..." },
+        { "tMs": 7200, "type": "pitch_caption", "text": "Our voices sound human enough to be rude, and our platform, um, the platform..." },
         { "tMs": 10400, "type": "interruption", "personaId": "vibes", "lineId": "vb-08" },
         { "tMs": 13200, "type": "pitch_caption", "text": "Fair. The numbers are good. The panel interrupting me is running on them." },
         { "tMs": 17400, "type": "interruption", "personaId": "spreadsheet", "lineId": "sp-02" },
