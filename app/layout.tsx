@@ -50,7 +50,7 @@ export default function RootLayout({
                 Built on{" "}
                 <a
                   className="font-semibold text-spotlight underline-offset-4 hover:underline"
-                  href="https://speko.ai?utm_source=pitch-gauntlet&utm_medium=viral&utm_campaign=viral-3x"
+                  href="https://speko.com?utm_source=pitch-gauntlet&utm_medium=viral&utm_campaign=viral-3x"
                 >
                   Speko
                 </a>{" "}
